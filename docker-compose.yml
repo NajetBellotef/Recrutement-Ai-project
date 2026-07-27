@@ -1,0 +1,43 @@
+services:
+
+  postgres:
+    image: postgres:16
+
+    container_name: recrutement_postgres
+
+    restart: always
+
+    environment:
+      POSTGRES_DB: recrutment_ai
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+    ports:
+      - "5434:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+
+    build: .
+
+    container_name: recrutement_backend
+
+    restart: always
+
+    ports:
+      - "8000:8000"
+
+    depends_on:
+      - postgres
+
+    env_file:
+      - .env
+
+    volumes:
+      - ./uploads:/app/uploads
+      - ./reports:/app/reports
+
+volumes:
+  postgres_data:

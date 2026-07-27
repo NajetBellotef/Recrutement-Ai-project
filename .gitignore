@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Environnement virtuel
+venv/
+.env
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# Python cache
+.pytest_cache/
+.mypy_cache/
+
+# Docker
+postgres_data/
+
+# Uploads
+uploads/
+
+# Rapports PDF générés
+reports/
+
+# OS
+.DS_Store
+Thumbs.db
