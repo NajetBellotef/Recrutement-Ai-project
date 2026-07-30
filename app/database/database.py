@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import URL
 from app.database.base import Base
 
@@ -20,14 +20,27 @@ DATABASE_URL = URL.create(
     port=int(os.getenv("DB_PORT")),
     database=os.getenv("DB_NAME"),
 )
+
 print(DATABASE_URL)
 
-#SQLAlchemy ouvre la connexion avec PostgreSQL
 engine = create_engine(DATABASE_URL)
-#Cette session sera utilisée partout dans le projet
+
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
     bind=engine
 )
 
+# ==========================
+# Dependency FastAPI
+# ==========================
+
+def get_db():
+
+    db = SessionLocal()
+
+    try:
+        yield db
+
+    finally:
+        db.close()

@@ -16,6 +16,11 @@ def match_cv_with_jobs(
     db: Session,
     cv_id: int
 ):
+    print("\n==============================")
+    print("===== MATCHING LANCE =====")
+    print("CV ID :", cv_id)
+    print("==============================")
+
     # ==========================
     # Récupération du CV
     # ==========================
@@ -24,10 +29,16 @@ def match_cv_with_jobs(
     ).first()
 
     if not cv:
+        print("❌ CV introuvable")
         return None
 
+    print("✅ CV trouvé :", cv.filename)
+
     if not cv.embedding:
+        print("❌ Aucun embedding pour le CV")
         return []
+
+    print("✅ Embedding CV trouvé")
 
     cv_embedding = json.loads(cv.embedding)
 
@@ -40,7 +51,11 @@ def match_cv_with_jobs(
 
     db.commit()
 
+    print("✅ Anciens matchings supprimés")
+
     jobs = db.query(Job).all()
+
+    print("📋 Nombre d'offres :", len(jobs))
 
     results = []
 
@@ -49,8 +64,14 @@ def match_cv_with_jobs(
     # ==========================
     for job in jobs:
 
+        print("--------------------------------")
+        print("Offre :", job.title)
+
         if not job.embedding:
+            print("❌ Pas d'embedding pour cette offre")
             continue
+
+        print("✅ Embedding offre trouvé")
 
         job_embedding = json.loads(job.embedding)
 
@@ -62,6 +83,8 @@ def match_cv_with_jobs(
             [job_embedding]
         )[0][0] * 100
 
+        print("Embedding Score :", round(float(embedding_score), 2))
+
         # -------------------------
         # Similarité des compétences
         # -------------------------
@@ -69,6 +92,8 @@ def match_cv_with_jobs(
             cv.skills,
             job.skills
         )
+
+        print("Skills Score :", round(float(skills_score), 2))
 
         # -------------------------
         # Score final
@@ -81,6 +106,8 @@ def match_cv_with_jobs(
 
         score_percent = round(float(score), 2)
 
+        print("Score final :", score_percent)
+
         # -------------------------
         # Compétences manquantes
         # -------------------------
@@ -92,18 +119,15 @@ def match_cv_with_jobs(
         # Analyse IA
         # -------------------------
         ai_comment = explain_match(
-    cv_analysis=cv.analysis,
-    job_analysis=job.analysis,
-    job_title=job.title,
-    embedding_score=round(float(embedding_score), 2),
-    skills_score=round(float(skills_score), 2),
-    common_skills=common_skills,
-    missing_skills=missing_skills
-)
+            cv_analysis=cv.analysis,
+            job_analysis=job.analysis,
+            job_title=job.title,
+            embedding_score=round(float(embedding_score), 2),
+            skills_score=round(float(skills_score), 2),
+            common_skills=common_skills,
+            missing_skills=missing_skills
+        )
 
-        # Le commentaire contient uniquement l'analyse IA.
-        # Les scores et compétences sont affichés ailleurs
-        # dans le rapport PDF.
         comment = ai_comment
 
         # -------------------------
@@ -121,6 +145,8 @@ def match_cv_with_jobs(
             comment=comment
         )
 
+        print("✅ Matching enregistré")
+
         # -------------------------
         # Résultat API
         # -------------------------
@@ -135,6 +161,10 @@ def match_cv_with_jobs(
             "missing_skills": missing_skills,
             "comment": comment
         })
+
+    print("==============================")
+    print("Nombre de matchings créés :", len(results))
+    print("==============================")
 
     # ==========================
     # Trier par score décroissant

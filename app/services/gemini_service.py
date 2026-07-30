@@ -61,9 +61,12 @@ CV :
 
     except Exception as e:
 
-        print("Erreur Gemini (CV) :", e)
+        import traceback
 
-        return """
+    print("===== ERREUR GEMINI =====")
+    traceback.print_exc()
+
+    return """
 Résumé :
 Analyse indisponible.
 
