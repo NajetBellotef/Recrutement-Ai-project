@@ -1,30 +1,43 @@
-# Python
-__pycache__/
-*.py[cod]
+# =========================
+# Backend Python
+# =========================
+backend/.env
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.py[cod]
 
-# Environnement virtuel
-venv/
-.env
+# Fichiers générés
+backend/uploads/*
+backend/reports/*
+backend/postgres_data/
 
-# VS Code
+# =========================
+# Frontend React / Node
+# =========================
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+
+# Variables d'environnement
+frontend/.env
+frontend/.env.local
+frontend/.env.development
+frontend/.env.production
+
+# =========================
+# IDE
+# =========================
 .vscode/
+.idea/
 
-# Logs
-*.log
-
-# Python cache
-.pytest_cache/
-.mypy_cache/
-
-# Docker
-postgres_data/
-
-# Uploads
-uploads/
-
-# Rapports PDF générés
-reports/
-
+# =========================
 # OS
+# =========================
 .DS_Store
 Thumbs.db
+
+# =========================
+# Logs
+# =========================
+*.log
