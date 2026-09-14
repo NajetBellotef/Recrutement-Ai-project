@@ -30,3 +30,8 @@ class User(Base):
 
     cvs = relationship("CV", back_populates="user")
 
+    jobs = relationship(
+    "Job",
+    back_populates="recruiter"
+)
+

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
-    getJobs,
+    getMyJobs,
     createJob,
     updateJob,
     deleteJob
@@ -44,7 +44,7 @@ function Jobs() {
 
         try {
 
-            const data = await getJobs();
+            const data = await getMyJobs();
 
             setJobs(data);
 
@@ -276,6 +276,8 @@ function handleView(job) {
             }
 
             <JobFormModal
+
+                key={editingJob?.id ?? "new"}
 
                 isOpen={showForm}
 

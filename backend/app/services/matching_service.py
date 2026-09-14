@@ -1,6 +1,4 @@
 import json
-
-from sklearn.metrics.pairwise import cosine_similarity
 from sqlalchemy.orm import Session
 
 from app.models.cv import CV
@@ -8,25 +6,21 @@ from app.models.job import Job
 from app.models.match import Match
 
 from app.services.match_service import create_match
-from app.services.gemini_service import explain_match
-from app.services.skills_service import skills_similarity
+from app.services.ai_service import calculate_matching
 
 
-def match_cv_with_jobs(
-    db: Session,
-    cv_id: int
-):
+def match_cv_with_jobs(db: Session, cv_id: int):
+
     print("\n==============================")
     print("===== MATCHING LANCE =====")
     print("CV ID :", cv_id)
     print("==============================")
 
-    # ==========================
-    # Récupération du CV
-    # ==========================
-    cv = db.query(CV).filter(
-        CV.id == cv_id
-    ).first()
+    # ==========================================
+    # RÉCUPÉRER LE CV
+    # ==========================================
+
+    cv = db.query(CV).filter(CV.id == cv_id).first()
 
     if not cv:
         print("❌ CV introuvable")
@@ -42,9 +36,10 @@ def match_cv_with_jobs(
 
     cv_embedding = json.loads(cv.embedding)
 
-    # ==========================
-    # Supprimer les anciens matchings
-    # ==========================
+    # ==========================================
+    # SUPPRIMER LES ANCIENS MATCHINGS
+    # ==========================================
+
     db.query(Match).filter(
         Match.cv_id == cv_id
     ).delete()
@@ -53,15 +48,20 @@ def match_cv_with_jobs(
 
     print("✅ Anciens matchings supprimés")
 
+    # ==========================================
+    # RÉCUPÉRER LES OFFRES
+    # ==========================================
+
     jobs = db.query(Job).all()
 
     print("📋 Nombre d'offres :", len(jobs))
 
     results = []
 
-    # ==========================
-    # Matching avec chaque offre
-    # ==========================
+    # ==========================================
+    # MATCHING AVEC AI SERVICE
+    # ==========================================
+
     for job in jobs:
 
         print("--------------------------------")
@@ -75,103 +75,107 @@ def match_cv_with_jobs(
 
         job_embedding = json.loads(job.embedding)
 
-        # -------------------------
-        # Similarité des embeddings
-        # -------------------------
-        embedding_score = cosine_similarity(
-            [cv_embedding],
-            [job_embedding]
-        )[0][0] * 100
+        # ======================================
+        # DONNÉES ENVOYÉES AU AI SERVICE
+        # ======================================
 
-        print("Embedding Score :", round(float(embedding_score), 2))
+        data = {
+            "cv_embedding": cv_embedding,
+            "job_embedding": job_embedding,
+            "cv_skills": cv.skills or "[]",
+            "job_skills": job.skills or "[]",
+            "cv_analysis": cv.analysis or "",
+            "job_analysis": job.analysis or "",
+            "job_title": job.title
+        }
 
-        # -------------------------
-        # Similarité des compétences
-        # -------------------------
-        skills_score, common_skills, required_skills = skills_similarity(
-            cv.skills,
-            job.skills
-        )
+        try:
 
-        print("Skills Score :", round(float(skills_score), 2))
+            ai_result = calculate_matching(data)
 
-        # -------------------------
-        # Score final
-        # -------------------------
-        score = (
-            embedding_score * 0.7
-            +
-            skills_score * 0.3
-        )
+            print("✅ Résultat reçu du AI Service")
 
-        score_percent = round(float(score), 2)
+            score_percent = ai_result["score"]
+            embedding_score = ai_result["embedding_score"]
+            skills_score = ai_result["skills_score"]
+            common_skills = ai_result["common_skills"]
+            missing_skills = ai_result["missing_skills"]
+            comment = ai_result["comment"]
 
-        print("Score final :", score_percent)
+            print(
+                "Embedding Score :",
+                embedding_score
+            )
 
-        # -------------------------
-        # Compétences manquantes
-        # -------------------------
-        missing_skills = list(
-            set(required_skills) - set(common_skills)
-        )
+            print(
+                "Skills Score :",
+                skills_score
+            )
 
-        # -------------------------
-        # Analyse IA
-        # -------------------------
-        ai_comment = explain_match(
-            cv_analysis=cv.analysis,
-            job_analysis=job.analysis,
-            job_title=job.title,
-            embedding_score=round(float(embedding_score), 2),
-            skills_score=round(float(skills_score), 2),
-            common_skills=common_skills,
-            missing_skills=missing_skills
-        )
+            print(
+                "Score final :",
+                score_percent
+            )
 
-        comment = ai_comment
+            # ==================================
+            # ENREGISTRER LE MATCH
+            # ==================================
 
-        # -------------------------
-        # Sauvegarde en base
-        # -------------------------
-        create_match(
-            db=db,
-            cv_id=cv.id,
-            job_id=job.id,
-            score=score_percent,
-            embedding_score=round(float(embedding_score), 2),
-            skills_score=round(float(skills_score), 2),
-            common_skills=common_skills,
-            missing_skills=missing_skills,
-            comment=comment
-        )
+            create_match(
+                db=db,
+                cv_id=cv.id,
+                job_id=job.id,
+                score=score_percent,
+                embedding_score=embedding_score,
+                skills_score=skills_score,
+                common_skills=common_skills,
+                missing_skills=missing_skills,
+                comment=comment
+            )
 
-        print("✅ Matching enregistré")
+            print("✅ Matching enregistré")
 
-        # -------------------------
-        # Résultat API
-        # -------------------------
-        results.append({
-            "job_id": job.id,
-            "title": job.title,
-            "company": job.company,
-            "score": score_percent,
-            "embedding_score": round(float(embedding_score), 2),
-            "skills_score": round(float(skills_score), 2),
-            "common_skills": common_skills,
-            "missing_skills": missing_skills,
-            "comment": comment
-        })
+            # ==================================
+            # RÉSULTAT
+            # ==================================
 
-    print("==============================")
-    print("Nombre de matchings créés :", len(results))
-    print("==============================")
+            results.append({
+                "job_id": job.id,
+                "title": job.title,
+                "company": job.company,
+                "score": score_percent,
+                "embedding_score": embedding_score,
+                "skills_score": skills_score,
+                "common_skills": common_skills,
+                "missing_skills": missing_skills,
+                "comment": comment
+            })
 
-    # ==========================
-    # Trier par score décroissant
-    # ==========================
+        except Exception as e:
+
+            print(
+                "❌ Erreur AI Service pour l'offre",
+                job.title,
+                ":",
+                e
+            )
+
+            continue
+
+    # ==========================================
+    # TRI PAR SCORE
+    # ==========================================
+
     results.sort(
         key=lambda x: x["score"],
         reverse=True
     )
+
+    print("==============================")
+    print(
+        "Nombre de matchings créés :",
+        len(results)
+    )
+    print("==============================")
 
     return results

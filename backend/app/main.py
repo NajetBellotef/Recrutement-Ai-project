@@ -24,10 +24,22 @@ import os
 from app.api.admin import router as admin_router
 from app.api.user import router as user_router
 
+
 app = FastAPI(
     title="Recruitment AI API",
     version="1.0.0"
 )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Créer le dossier uploads s'il n'existe pas
 os.makedirs("uploads/profile", exist_ok=True)
 
@@ -38,16 +50,6 @@ app.mount(
     name="uploads"
 )
 
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 app.include_router(auth_router)
 app.include_router(cvs_router)
 app.include_router(jobs_router)

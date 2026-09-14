@@ -1,6 +1,14 @@
 import api from "./api";
 
 // =========================
+// uniquement les offres du recruteur connecté
+// =========================
+
+export async function getMyJobs() {
+    const response = await api.get("/jobs/mine");
+    return response.data;
+}
+// =========================
 // Toutes les offres
 // =========================
 export async function getJobs() {

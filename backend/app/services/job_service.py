@@ -1,10 +1,10 @@
 
 import json
-from app.services.gemini_service import (
+from app.services.ai_service import (
     analyze_job,
+    extract_job_skills,
+    generate_embedding
 )
-from app.services.skill_extractor import extract_skills
-from app.services.embedding_service import generate_embedding
 
 from sqlalchemy.orm import Session
 from app.models.job import Job
@@ -13,6 +13,7 @@ from app.models.job import Job
 # ==========================
 def create_job(
     db: Session,
+    recruiter_id: int,
     title: str,
     company: str,
     location: str,
@@ -22,7 +23,7 @@ def create_job(
 
     analysis = analyze_job(description)
 
-    skills = extract_skills(description)
+    skills = extract_job_skills(description)
 
     embedding = generate_embedding(description)
 
@@ -31,6 +32,7 @@ def create_job(
     skills_json = json.dumps(skills)
 
     job = Job(
+        recruiter_id=recruiter_id,
         title=title,
         company=company,
         location=location,
@@ -47,13 +49,22 @@ def create_job(
 
     return job
 # ==========================
-# Toutes les offres
+# Récuperer Toutes les offres
 # ==========================
 def get_jobs(db: Session):
 
     return db.query(Job).all()
+# ==========================
+# Recuperer offres d'un recruteur
+# ==========================
+def get_jobs_by_recruiter(
+    db: Session,
+    recruiter_id: int
+):
 
-
+    return db.query(Job).filter(
+        Job.recruiter_id == recruiter_id
+    ).all()
 # ==========================
 # Une offre
 # ==========================
@@ -73,10 +84,18 @@ def get_job(
 def update_job(
     db: Session,
     job_id: int,
-    data
+    data,
+    recruiter_id: int
 ):
 
-    job = get_job(db, job_id)
+    job = (
+        db.query(Job)
+        .filter(
+            Job.id == job_id,
+            Job.recruiter_id == recruiter_id
+        )
+        .first()
+    )
 
     if not job:
         return None
@@ -89,8 +108,10 @@ def update_job(
 
     # Nouvelle analyse
     job.analysis = analyze_job(data.description)
-    skills = extract_skills(data.description)
+
+    skills = extract_job_skills(data.description)
     job.skills = json.dumps(skills)
+
     # Nouvel embedding
     embedding = generate_embedding(data.description)
     job.embedding = json.dumps(embedding)
@@ -104,10 +125,18 @@ def update_job(
 # ==========================
 def delete_job(
     db: Session,
-    job_id: int
+    job_id: int,
+    recruiter_id: int
 ):
 
-    job = get_job(db, job_id)
+    job = (
+        db.query(Job)
+        .filter(
+            Job.id == job_id,
+            Job.recruiter_id == recruiter_id
+        )
+        .first()
+    )
 
     if not job:
         return False

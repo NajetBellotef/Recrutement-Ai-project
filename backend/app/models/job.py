@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime , ForeignKey
 from sqlalchemy.sql import func
 
 from app.database.base import Base
@@ -9,6 +9,12 @@ class Job(Base):
     __tablename__ = "jobs"
 
     id = Column(Integer, primary_key=True, index=True)
+
+    recruiter_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False
+    )
 
     title = Column(String(200), nullable=False)
 
@@ -35,4 +41,9 @@ class Job(Base):
     "Match",
     back_populates="job",
     cascade="all, delete-orphan"
+    )
+
+    recruiter = relationship(
+    "User",
+    back_populates="jobs"
     )

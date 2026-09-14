@@ -1,0 +1,96 @@
+services:
+
+  # =========================
+  # PostgreSQL
+  # =========================
+  postgres:
+    image: postgres:16
+    container_name: recrutement_postgres
+    restart: always
+
+    environment:
+      POSTGRES_DB: recrutment_ai
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+    ports:
+      - "5434:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+
+  # =========================
+  # AI Service
+  # =========================
+  ai_service:
+    build:
+      context: ./ai_service
+      dockerfile: Dockerfile
+
+    container_name: recrutement_ai_service
+    restart: always
+
+    ports:
+      - "8001:8001"
+
+    env_file:
+      - ./ai_service/.env
+
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001
+
+
+  # =========================
+  # Backend FastAPI
+  # =========================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+
+    container_name: recrutement_backend
+    restart: always
+
+    ports:
+      - "8000:8000"
+
+    depends_on:
+      - postgres
+      - ai_service
+
+    env_file:
+      - ./backend/.env
+
+    environment:
+      AI_SERVICE_URL: http://ai_service:8001
+
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/reports:/app/reports
+
+
+  # =========================
+  # Frontend React
+  # =========================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+
+    container_name: recrutement_frontend
+    restart: always
+
+    ports:
+      - "3000:80"
+
+    depends_on:
+      - backend
+
+
+# =========================
+# Volumes
+# =========================
+volumes:
+  postgres_data:
+    external: true
+    name: backend_postgres_data

@@ -1,8 +1,3 @@
-import spacy
-
-# Chargement du modèle une seule fois
-nlp = spacy.load("en_core_web_lg")
-
 # Liste des compétences connues
 KNOWN_SKILLS = {
     "python", "java", "javascript", "typescript", "php", "c", "c++", "c#",
@@ -22,11 +17,20 @@ KNOWN_SKILLS = {
 
 
 def extract_skills(text: str):
+    """
+    Extrait les compétences techniques connues
+    présentes dans le texte.
+    """
+
+    if not text:
+        return []
+
     text = text.lower()
 
     skills = []
 
     for skill in KNOWN_SKILLS:
+
         if skill in text:
             skills.append(skill.title())
 

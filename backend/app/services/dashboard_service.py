@@ -1,4 +1,3 @@
-
 import json
 
 from sqlalchemy.orm import Session
@@ -9,15 +8,46 @@ from app.models.job import Job
 from app.models.match import Match
 
 
-def get_dashboard_stats(db: Session):
+def get_dashboard_stats(
+    db: Session,
+    recruiter_id: int
+):
+
+    # --------------------------
+    # Utilisateurs
+    # --------------------------
 
     users = db.query(User).count()
 
+    # --------------------------
+    # CV
+    # --------------------------
+
     cvs = db.query(CV).count()
 
-    jobs = db.query(Job).count()
+    # --------------------------
+    # Offres du recruteur
+    # --------------------------
 
-    matches = db.query(Match).all()
+    jobs = db.query(Job).filter(
+        Job.recruiter_id == recruiter_id
+    ).count()
+
+    # --------------------------
+    # Matchings du recruteur
+    # --------------------------
+
+    matches = (
+        db.query(Match)
+        .join(
+            Job,
+            Match.job_id == Job.id
+        )
+        .filter(
+            Job.recruiter_id == recruiter_id
+        )
+        .all()
+    )
 
     # --------------------------
     # Score moyen
@@ -26,25 +56,18 @@ def get_dashboard_stats(db: Session):
     if matches:
 
         average_score = round(
-
             sum(m.score for m in matches) / len(matches),
-
             2
-
         )
 
         best_match = round(
-
             max(m.score for m in matches),
-
             2
-
         )
 
     else:
 
         average_score = 0
-
         best_match = 0
 
     # --------------------------
@@ -58,7 +81,6 @@ def get_dashboard_stats(db: Session):
     for cv in all_cvs:
 
         if not cv.skills:
-
             continue
 
         try:
@@ -68,9 +90,7 @@ def get_dashboard_stats(db: Session):
             for skill in skills:
 
                 skills_counter[skill] = (
-
                     skills_counter.get(skill, 0) + 1
-
                 )
 
         except Exception:
@@ -80,11 +100,8 @@ def get_dashboard_stats(db: Session):
     if skills_counter:
 
         top_skill = max(
-
             skills_counter,
-
             key=skills_counter.get
-
         )
 
     else:

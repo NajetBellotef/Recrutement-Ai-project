@@ -5,18 +5,15 @@ from sqlalchemy.orm import Session
 
 from app.database.dependencies import get_db
 from app.services.auth_service import get_current_user
-
+from app.services.ai_service import (
+    analyze_cv,
+    extract_cv_skills,
+    generate_embedding
+)
 from app.models.user import User
 from app.models.cv import CV
 from app.models.match import Match
 from app.services.pdf_service import extract_text_from_pdf
-from app.services.gemini_service import (
-    analyze_cv,
-    
-)
-from app.services.skill_extractor import extract_skills
-
-from app.services.embedding_service import generate_embedding
 import json
 from app.services.ocr_service import extract_text_from_image
 from fastapi import HTTPException
@@ -109,7 +106,7 @@ async def upload_cv(
 
     analysis = analyze_cv(extracted_text)
 
-    skills = extract_skills(extracted_text)
+    skills = extract_cv_skills(extracted_text)
 
     embedding = generate_embedding(extracted_text)
 

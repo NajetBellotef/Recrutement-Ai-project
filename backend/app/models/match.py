@@ -41,7 +41,14 @@ class Match(Base):
     DateTime,
     default=datetime.utcnow
 )
+    #relation entre les objets Python/SQLAlchemy
 
-    cv = relationship("CV")
+    cv = relationship(
+    "CV",
+    back_populates="matches"
+)
 
-    job = relationship("Job")
+    job = relationship(
+    "Job",
+    back_populates="matches"
+)

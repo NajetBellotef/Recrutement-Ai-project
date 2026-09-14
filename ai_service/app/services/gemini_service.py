@@ -1,7 +1,13 @@
 import os
+import json
+
 from dotenv import load_dotenv
 from google import genai
-import json
+
+
+# ==========================================
+# CONFIGURATION GEMINI
+# ==========================================
 
 load_dotenv()
 
@@ -10,7 +16,16 @@ client = genai.Client(
 )
 
 
+#MODEL_NAME = "gemini-flash-latest"
+MODEL_NAME = "gemini-3.6-flash"
+
+
+# ==========================================
+# ANALYSE CV
+# ==========================================
+
 def analyze_cv(cv_text: str):
+
     if not cv_text or cv_text.strip() == "":
         return "Le CV est vide."
 
@@ -53,7 +68,7 @@ CV :
     try:
 
         response = client.models.generate_content(
-            model="gemini-flash-latest",
+            model=MODEL_NAME,
             contents=prompt
         )
 
@@ -61,12 +76,9 @@ CV :
 
     except Exception as e:
 
-        import traceback
+        print("Erreur Gemini (CV) :", e)
 
-    print("===== ERREUR GEMINI =====")
-    traceback.print_exc()
-
-    return """
+        return """
 Résumé :
 Analyse indisponible.
 
@@ -91,10 +103,17 @@ Faiblesses :
 Recommandation finale :
 Analyse Gemini momentanément indisponible.
 """
+
+
+# ==========================================
+# ANALYSE OFFRE D'EMPLOI
+# ==========================================
+
 def analyze_job(job_description: str):
 
     if not job_description or job_description.strip() == "":
         return "La description est vide."
+
     prompt = f"""
 Tu es un expert en recrutement.
 
@@ -122,7 +141,7 @@ Offre :
     try:
 
         response = client.models.generate_content(
-            model="gemini-flash-latest",
+            model=MODEL_NAME,
             contents=prompt
         )
 
@@ -152,35 +171,10 @@ Recommandations :
 Analyse Gemini momentanément indisponible.
 """
 
-if __name__ == "__main__":
 
-    print("========== TEST CV ==========\n")
-
-    cv = """
-Nom : Najet Ben Abi Lotef
-
-Python
-FastAPI
-React
-Docker
-PostgreSQL
-Machine Learning
-TensorFlow
-"""
-
-    print(analyze_cv(cv))
-
-    print("\n==============================\n")
-
-    print("========== TEST JOB ==========\n")
-
-    job = """
-Nous recherchons un développeur Python maîtrisant
-FastAPI, PostgreSQL, Docker,
-Machine Learning et TensorFlow.
-"""
-
-    print(analyze_job(job))
+# ==========================================
+# EXPLICATION DU MATCHING
+# ==========================================
 
 def explain_match(
     cv_analysis: str,
@@ -272,7 +266,7 @@ Réponds uniquement par un paragraphe fluide, sans titre, sans listes à puces e
     try:
 
         response = client.models.generate_content(
-            model="gemini-flash-latest",
+            model=MODEL_NAME,
             contents=prompt
         )
 
@@ -288,7 +282,16 @@ Réponds uniquement par un paragraphe fluide, sans titre, sans listes à puces e
             "Le score de matching ainsi que l'analyse des compétences "
             "restent néanmoins valides."
         )
+
+
+# ==========================================
+# EXTRACTION DES COMPÉTENCES DU CV
+# ==========================================
+
 def extract_cv_skills(cv_text: str):
+
+    if not cv_text or cv_text.strip() == "":
+        return []
 
     prompt = f"""
 Tu es un expert RH.
@@ -314,7 +317,7 @@ CV :
     try:
 
         response = client.models.generate_content(
-            model="gemini-flash-latest",
+            model=MODEL_NAME,
             contents=prompt
         )
 
@@ -325,7 +328,16 @@ CV :
         print("Erreur Extraction CV :", e)
 
         return []
+
+
+# ==========================================
+# EXTRACTION DES COMPÉTENCES DE L'OFFRE
+# ==========================================
+
 def extract_job_skills(job_text: str):
+
+    if not job_text or job_text.strip() == "":
+        return []
 
     prompt = f"""
 Tu es un expert RH.
@@ -350,7 +362,7 @@ Offre :
     try:
 
         response = client.models.generate_content(
-            model="gemini-flash-latest",
+            model=MODEL_NAME,
             contents=prompt
         )
 

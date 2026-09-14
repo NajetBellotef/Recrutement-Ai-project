@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
-
-import json
+from app.services.auth_service import get_current_user
+from app.models.user import User
 
 from app.database.dependencies import get_db
 
@@ -15,6 +14,7 @@ from app.schemas.job import (
 from app.services.job_service import (
     create_job,
     get_jobs,
+    get_jobs_by_recruiter,
     get_job,
     update_job,
     delete_job
@@ -35,19 +35,25 @@ router = APIRouter(
 )
 def create(
     job: JobCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
+
+    if current_user.role != "recruiter":
+        raise HTTPException(
+            status_code=403,
+            detail="Accès réservé aux recruteurs."
+        )
 
     return create_job(
         db=db,
+        recruiter_id=current_user.id,
         title=job.title,
         company=job.company,
         location=job.location,
         description=job.description,
         required_skills=job.required_skills
     )
-
-
 # ==========================
 # Toutes les offres
 # ==========================
@@ -61,7 +67,28 @@ def read_all(
 
     return get_jobs(db)
 
+# ==========================
+# uniquement les offres du recruteur connecté
+# ==========================
+@router.get(
+    "/mine",
+    response_model=list[JobResponse]
+)
+def read_my_jobs(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
 
+    if current_user.role != "recruiter":
+        raise HTTPException(
+            status_code=403,
+            detail="Accès réservé aux recruteurs."
+        )
+
+    return get_jobs_by_recruiter(
+        db,
+        current_user.id
+    )
 # ==========================
 # Une offre
 # ==========================
@@ -95,42 +122,56 @@ def read_one(
 def update(
     job_id: int,
     data: JobUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
+
+    if current_user.role != "recruiter":
+        raise HTTPException(
+            status_code=403,
+            detail="Accès réservé aux recruteurs."
+        )
 
     job = update_job(
         db,
         job_id,
-        data
+        data,
+        current_user.id
     )
 
     if not job:
         raise HTTPException(
             status_code=404,
-            detail="Offre introuvable."
+            detail="Offre introuvable ou accès interdit."
         )
 
     return job
-
-
 # ==========================
 # Supprimer
 # ==========================
 @router.delete("/{job_id}")
 def delete(
     job_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
+
+    if current_user.role != "recruiter":
+        raise HTTPException(
+            status_code=403,
+            detail="Accès réservé aux recruteurs."
+        )
 
     ok = delete_job(
         db,
-        job_id
+        job_id,
+        current_user.id
     )
 
     if not ok:
         raise HTTPException(
             status_code=404,
-            detail="Offre introuvable."
+            detail="Offre introuvable ou accès interdit."
         )
 
     return {

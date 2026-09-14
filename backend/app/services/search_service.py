@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-
 from app.models.cv import CV
 from app.models.job import Job
 

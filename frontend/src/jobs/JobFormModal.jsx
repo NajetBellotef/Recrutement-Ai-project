@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState,} from "react";
 import { X } from "lucide-react";
 
 function JobFormModal({
@@ -21,8 +21,10 @@ function JobFormModal({
     }));
 
     const [saving, setSaving] = useState(false);
-
-
+    // =========================================================
+    // CHARGER LES DONNÉES DE L'OFFRE À MODIFIER
+    // =========================================================
+    
     // =========================================================
     // GESTION DES CHAMPS
     // =========================================================
