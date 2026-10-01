@@ -1,0 +1,26 @@
+name: CI Recruitment AI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Vérifier Docker
+        run: docker --version
+
+      - name: Vérifier Docker Compose
+        run: docker compose version
+
+      - name: Construire les services Docker
+        run: docker compose build
