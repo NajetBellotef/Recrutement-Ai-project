@@ -1,0 +1,59 @@
+name: Publish Docker Images
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/najetbellotef
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Connexion à GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Construire et publier Backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/recruitment-ai-backend:latest
+            ${{ env.IMAGE_PREFIX }}/recruitment-ai-backend:${{ github.sha }}
+
+      - name: Construire et publier AI Service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./ai_service
+          file: ./ai_service/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/recruitment-ai-service:latest
+            ${{ env.IMAGE_PREFIX }}/recruitment-ai-service:${{ github.sha }}
+
+      - name: Construire et publier Frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/recruitment-ai-frontend:latest
+            ${{ env.IMAGE_PREFIX }}/recruitment-ai-frontend:${{ github.sha }}
