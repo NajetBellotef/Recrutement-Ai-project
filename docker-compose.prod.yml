@@ -1,0 +1,52 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: recrutement_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: recrutment_ai
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    image: ghcr.io/najetbellotef/recruitment-ai-backend:latest
+    container_name: recrutement_backend
+    restart: always
+    depends_on:
+      - postgres
+      - ai_service
+    env_file:
+      - ./backend/.env
+    environment:
+      AI_SERVICE_URL: http://ai_service:8001
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/reports:/app/reports
+    ports:
+      - "8000:8000"
+
+  ai_service:
+    image: ghcr.io/najetbellotef/recruitment-ai-service:latest
+    container_name: recrutement_ai_service
+    restart: always
+    env_file:
+      - ./ai_service/.env
+    ports:
+      - "8001:8001"
+
+  frontend:
+    image: ghcr.io/najetbellotef/recruitment-ai-frontend:latest
+    container_name: recrutement_frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  postgres_data:
+    external: true
+    name: backend_postgres_data
